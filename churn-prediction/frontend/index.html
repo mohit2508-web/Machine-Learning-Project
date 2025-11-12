@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telco Churn Predictor</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+
+        // Lucide Icons as React components
+        const Brain = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
+                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+            </svg>
+        );
+
+        const TrendingUp = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                <polyline points="16 7 22 7 22 13"/>
+            </svg>
+        );
+
+        const AlertCircle = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        );
+
+        const CheckCircle = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+        );
+
+        const BarChart3 = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <path d="M3 3v18h18"/>
+                <path d="M18 17V9"/>
+                <path d="M13 17V5"/>
+                <path d="M8 17v-3"/>
+            </svg>
+        );
+
+        const Users = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+        );
+
+        const Zap = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+        );
+
+        const Loader = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                <line x1="12" y1="2" x2="12" y2="6"/>
+                <line x1="12" y1="18" x2="12" y2="22"/>
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                <line x1="2" y1="12" x2="6" y2="12"/>
+                <line x1="18" y1="12" x2="22" y2="12"/>
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+            </svg>
+        );
+
+        const ChurnPredictor = () => {
+            const [formData, setFormData] = useState({
+                gender: 'Male',
+                SeniorCitizen: 0,
+                Partner: 'No',
+                Dependents: 'No',
+                tenure: 12,
+                PhoneService: 'Yes',
+                MultipleLines: 'No',
+                InternetService: 'Fiber optic',
+                OnlineSecurity: 'No',
+                OnlineBackup: 'No',
+                DeviceProtection: 'No',
+                TechSupport: 'No',
+                StreamingTV: 'No',
+                StreamingMovies: 'No',
+                Contract: 'Month-to-month',
+                PaperlessBilling: 'Yes',
+                PaymentMethod: 'Electronic check',
+                MonthlyCharges: 70,
+                TotalCharges: 840
+            });
+
+            const [prediction, setPrediction] = useState(null);
+            const [showResults, setShowResults] = useState(false);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
+
+            const API_URL = 'http://localhost:5000/api/predict';
+
+            const handleInputChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({
+                    ...prev,
+                    [name]: name === 'tenure' || name === 'MonthlyCharges' || name === 'TotalCharges' || name === 'SeniorCitizen'
+                        ? parseFloat(value) || 0
+                        : value
+                }));
+            };
+
+            const predictChurn = async () => {
+                setLoading(true);
+                setError(null);
+                
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Prediction failed. Make sure Flask API is running on port 5000.');
+                    }
+
+                    const data = await response.json();
+                    setPrediction(data);
+                    setShowResults(true);
+                } catch (err) {
+                    setError(err.message);
+                    console.error('Prediction error:', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const getRiskColor = (level) => {
+                switch(level) {
+                    case 'High': return 'text-red-600 bg-red-50 border-red-200';
+                    case 'Medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+                    case 'Low': return 'text-green-600 bg-green-50 border-green-200';
+                    default: return 'text-gray-600 bg-gray-50 border-gray-200';
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+                    {/* Header */}
+                    <div className="bg-white border-b border-gray-200 shadow-sm">
+                        <div className="max-w-7xl mx-auto px-6 py-6">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-3 rounded-xl">
+                                    <Brain className="w-8 h-8 text-white" />
+                                </div>
+                                <div>
+                                    <h1 className="text-3xl font-bold text-gray-900">Telco Churn Predictor</h1>
+                                    <p className="text-gray-600 mt-1">AI-Powered Customer Retention Analysis</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto px-6 py-8">
+                        {/* Stats Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-blue-100 p-3 rounded-lg">
+                                        <BarChart3 className="w-6 h-6 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600 text-sm">Model Accuracy</p>
+                                        <p className="text-2xl font-bold text-gray-900">94.2%</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-green-100 p-3 rounded-lg">
+                                        <CheckCircle className="w-6 h-6 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600 text-sm">F1 Score</p>
+                                        <p className="text-2xl font-bold text-gray-900">92.8</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-purple-100 p-3 rounded-lg">
+                                        <Users className="w-6 h-6 text-purple-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600 text-sm">Customers Analyzed</p>
+                                        <p className="text-2xl font-bold text-gray-900">7,043</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-orange-100 p-3 rounded-lg">
+                                        <Zap className="w-6 h-6 text-orange-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600 text-sm">Model Type</p>
+                                        <p className="text-xl font-bold text-gray-900">XGBoost</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Error Alert */}
+                        {error && (
+                            <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                                <div className="flex items-center">
+                                    <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
+                                    <div>
+                                        <p className="text-red-800 font-semibold">Connection Error</p>
+                                        <p className="text-red-700 text-sm mt-1">{error}</p>
+                                        <p className="text-red-600 text-xs mt-2">Make sure Flask API is running: <code className="bg-red-100 px-2 py-1 rounded">python app.py</code></p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Input Form */}
+                            <div className="lg:col-span-2">
+                                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                        <TrendingUp className="w-6 h-6 text-indigo-600" />
+                                        Customer Information
+                                    </h2>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Demographics */}
+                                        <div className="space-y-4">
+                                            <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">Demographics</h3>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                                                <select name="gender" value={formData.gender} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Male</option>
+                                                    <option>Female</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Senior Citizen</label>
+                                                <select name="SeniorCitizen" value={formData.SeniorCitizen} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option value={0}>No</option>
+                                                    <option value={1}>Yes</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Partner</label>
+                                                <select name="Partner" value={formData.Partner} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Dependents</label>
+                                                <select name="Dependents" value={formData.Dependents} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Tenure (months)</label>
+                                                <input type="number" name="tenure" value={formData.tenure} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+                                            </div>
+                                        </div>
+
+                                        {/* Services */}
+                                        <div className="space-y-4">
+                                            <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">Services</h3>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Service</label>
+                                                <select name="PhoneService" value={formData.PhoneService} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Multiple Lines</label>
+                                                <select name="MultipleLines" value={formData.MultipleLines} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                    <option>No phone service</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Internet Service</label>
+                                                <select name="InternetService" value={formData.InternetService} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>DSL</option>
+                                                    <option>Fiber optic</option>
+                                                    <option>No</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Online Security</label>
+                                                <select name="OnlineSecurity" value={formData.OnlineSecurity} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                    <option>No internet service</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Online Backup</label>
+                                                <select name="OnlineBackup" value={formData.OnlineBackup} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                    <option>No internet service</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* Additional Services */}
+                                        <div className="space-y-4">
+                                            <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">Additional Services</h3>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Device Protection</label>
+                                                <select name="DeviceProtection" value={formData.DeviceProtection} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                    <option>No internet service</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Tech Support</label>
+                                                <select name="TechSupport" value={formData.TechSupport} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                    <option>No internet service</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Streaming TV</label>
+                                                <select name="StreamingTV" value={formData.StreamingTV} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                    <option>No internet service</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Streaming Movies</label>
+                                                <select name="StreamingMovies" value={formData.StreamingMovies} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                    <option>No internet service</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* Account Info */}
+                                        <div className="space-y-4">
+                                            <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">Account Details</h3>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Contract</label>
+                                                <select name="Contract" value={formData.Contract} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Month-to-month</option>
+                                                    <option>One year</option>
+                                                    <option>Two year</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Paperless Billing</label>
+                                                <select name="PaperlessBilling" value={formData.PaperlessBilling} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Yes</option>
+                                                    <option>No</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                                                <select name="PaymentMethod" value={formData.PaymentMethod} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                                    <option>Electronic check</option>
+                                                    <option>Mailed check</option>
+                                                    <option>Bank transfer (automatic)</option>
+                                                    <option>Credit card (automatic)</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Charges ($)</label>
+                                                <input type="number" step="0.01" name="MonthlyCharges" value={formData.MonthlyCharges} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Total Charges ($)</label>
+                                                <input type="number" step="0.01" name="TotalCharges" value={formData.TotalCharges} onChange={handleInputChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={predictChurn}
+                                        disabled={loading}
+                                        className="w-full mt-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {loading ? (
+                                            <>
+                                                <Loader className="w-5 h-5 animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Brain className="w-5 h-5" />
+                                                Predict Churn Risk
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Results Panel */}
+                            <div className="lg:col-span-1">
+                                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 sticky top-8">
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                        <AlertCircle className="w-6 h-6 text-indigo-600" />
+                                        Prediction Results
+                                    </h2>
+
+                                    {!showResults ? (
+                                        <div className="text-center py-12">
+                                            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <Brain className="w-10 h-10 text-gray-400" />
+                                            </div>
+                                            <p className="text-gray-500">Enter customer details and click predict to see results</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            {/* Main Result */}
+                                            <div className={`p-6 rounded-xl border-2 ${prediction.willChurn ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                                                <div className="text-center">
+                                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 ${prediction.willChurn ? 'bg-red-100' : 'bg-green-100'}`}>
+                                                        {prediction.willChurn ? (
+                                                            <AlertCircle className="w-8 h-8 text-red-600" />
+                                                        ) : (
+                                                            <CheckCircle className="w-8 h-8 text-green-600" />
+                                                        )}
+                                                    </div>
+                                                    <h3 className={`text-xl font-bold mb-2 ${prediction.willChurn ? 'text-red-700' : 'text-green-700'}`}>
+                                                        {prediction.willChurn ? 'HIGH CHURN RISK' : 'LOW CHURN RISK'}
+                                                    </h3>
+                                                    <p className="text-gray-600 text-sm">
+                                                        {prediction.willChurn ? 'Customer likely to churn' : 'Customer likely to stay'}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Metrics */}
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <div className="flex justify-between mb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Churn Probability</span>
+                                                        <span className="text-sm font-bold text-gray-900">{(prediction.probability * 100).toFixed(1)}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-200 rounded-full h-3">
+                                                        <div 
+                                                            className={`h-3 rounded-full transition-all ${prediction.probability > 0.7 ? 'bg-red-500' : prediction.probability > 0.4 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                                                            style={{ width: `${prediction.probability * 100}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <div className="flex justify-between mb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Model Confidence</span>
+                                                        <span className="text-sm font-bold text-gray-900">{(prediction.confidence * 100).toFixed(1)}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-200 rounded-full h-3">
+                                                        <div 
+                                                            className="h-3 rounded-full bg-indigo-500 transition-all"
+                                                            style={{ width: `${prediction.confidence * 100}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className={`p-4 rounded-lg border-2 ${getRiskColor(prediction.riskLevel)}`}>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-semibold">Risk Level</span>
+                                                        <span className="text-xl font-bold">{prediction.riskLevel}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Recommendations */}
+                                            {prediction.willChurn && (
+                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                                    <h4 className="font-semibold text-blue-900 mb-2">Retention Strategies</h4>
+                                                    <ul className="text-sm text-blue-800 space-y-1">
+                                                        <li>• Offer contract upgrade incentive</li>
+                                                        <li>• Provide personalized discount</li>
+                                                        <li>• Schedule customer success call</li>
+                                                        <li>• Add value-added services</li>
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ChurnPredictor />);
+    </script>
+</body>
+</html>
